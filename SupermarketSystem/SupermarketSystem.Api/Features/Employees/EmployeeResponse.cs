@@ -1,12 +1,12 @@
-public class Employee
+namespace SupermarketSystem.Api.Features.Employees;
+
+public class EmployeeResponse
 {
     public long Id { get; set; }
 
     public string FullName { get; set; } = string.Empty;
 
     public string Username { get; set; } = string.Empty;
-
-    public string PasswordHash { get; set; } = string.Empty;
 
     public string Role { get; set; } = string.Empty;
 

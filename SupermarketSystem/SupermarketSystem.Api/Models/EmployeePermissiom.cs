@@ -5,7 +5,4 @@ public class EmployeePermission
     public long EmployeeId { get; set; }
 
     public string PermissionKey { get; set; } = string.Empty;
-
-
-    public required Employee Employee { get; set; }
 }
