@@ -1,32 +1,35 @@
-using SupermarketSystem.Api.Data;
-
+using System.Reflection;
 using SupermarketSystem.Api.Interface;
-using DotNetEnv;
-
-Env.Load();
+using SupermarketSystem.Api.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
-
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
+// 1️⃣ تسجيل الـ Connection Factory
 builder.Services.AddScoped<IDbConnectionFactory, DbConnectionFactory>();
 
-builder.Services.AddMediatR(configuration =>
-    configuration.RegisterServicesFromAssembly(typeof(Program).Assembly));
+// 2️⃣ إضافة خدمات الـ Controllers
+builder.Services.AddControllers();
+
+// 3️⃣ إضافة MediatR لقراءة كافة الـ Handlers في المشروع
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
+
+// 4️⃣ إضافة OpenAPI/Swagger
+builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.MapOpenApi();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/openapi/v1.json", "v1");
+    });
 }
 
 // app.UseHttpsRedirection();
 
+// 5️⃣ ربط الـ Controllers
 app.MapControllers();
 
 app.Run();
