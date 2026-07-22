@@ -1,4 +1,3 @@
-// Data/DbConnectionFactory.cs
 using System.Data;
 using MySqlConnector;
 using SupermarketSystem.Api.Interface;
@@ -9,10 +8,12 @@ public class DbConnectionFactory : IDbConnectionFactory
 {
     private readonly string _connectionString;
 
-    public DbConnectionFactory(IConfiguration configuration)
+    public DbConnectionFactory()
     {
-        _connectionString = configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is missing.");
+        _connectionString =
+            Environment.GetEnvironmentVariable("CONNECTION_STRING")
+            ?? throw new InvalidOperationException(
+                "CONNECTION_STRING was not found in the .env file.");
     }
 
     public IDbConnection CreateConnection()
