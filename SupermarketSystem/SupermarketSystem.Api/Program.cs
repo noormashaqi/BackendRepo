@@ -1,19 +1,23 @@
 using System.Reflection;
 using SupermarketSystem.Api.Interface;
 using SupermarketSystem.Api.Data;
+using SupermarketSystem.Api.Services.Jwt; // 👈 استدعاء IJwtService & JwtService
 
 var builder = WebApplication.CreateBuilder(args);
 
 // 1️⃣ تسجيل الـ Connection Factory
 builder.Services.AddScoped<IDbConnectionFactory, DbConnectionFactory>();
 
-// 2️⃣ إضافة خدمات الـ Controllers
+// 2️⃣ تسجيل خدمة الـ JWT (حل مشكلة IJwtService)
+builder.Services.AddScoped<IJwtService, JwtService>();
+
+// 3️⃣ إضافة خدمات الـ Controllers
 builder.Services.AddControllers();
 
-// 3️⃣ إضافة MediatR لقراءة كافة الـ Handlers في المشروع
+// 4️⃣ إضافة MediatR لقراءة كافة الـ Handlers في المشروع
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
 
-// 4️⃣ إضافة OpenAPI/Swagger
+// 5️⃣ إضافة OpenAPI/Swagger
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
@@ -29,7 +33,7 @@ if (app.Environment.IsDevelopment())
 
 // app.UseHttpsRedirection();
 
-// 5️⃣ ربط الـ Controllers
+// 6️⃣ ربط الـ Controllers
 app.MapControllers();
 
 app.Run();
