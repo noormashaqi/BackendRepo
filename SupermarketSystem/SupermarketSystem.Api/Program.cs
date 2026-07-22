@@ -1,7 +1,19 @@
+using System.Reflection;
+using SupermarketSystem.Api.Interface;
+using SupermarketSystem.Api.Data;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+// 1️⃣ تسجيل الـ Connection Factory
+builder.Services.AddScoped<IDbConnectionFactory, DbConnectionFactory>();
+
+// 2️⃣ إضافة خدمات الـ Controllers
+builder.Services.AddControllers();
+
+// 3️⃣ إضافة MediatR لقراءة كافة الـ Handlers في المشروع
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
+
+// 4️⃣ إضافة OpenAPI/Swagger
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
@@ -10,32 +22,15 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/openapi/v1.json", "v1");
+    });
 }
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+// 5️⃣ ربط الـ Controllers
+app.MapControllers();
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
