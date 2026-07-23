@@ -1,5 +1,4 @@
 using System.Data;
-using Microsoft.Extensions.Configuration;
 using MySqlConnector;
 using SupermarketSystem.Api.Interface;
 
@@ -7,22 +6,18 @@ namespace SupermarketSystem.Api.Data;
 
 public class DbConnectionFactory : IDbConnectionFactory
 {
-    private readonly IConfiguration _configuration;
+    private readonly string _connectionString;
 
-    public DbConnectionFactory(IConfiguration configuration)
+    public DbConnectionFactory()
     {
-        _configuration = configuration;
+        _connectionString =
+            Environment.GetEnvironmentVariable("CONNECTION_STRING")
+            ?? throw new InvalidOperationException(
+                "CONNECTION_STRING was not found in the .env file.");
     }
 
     public IDbConnection CreateConnection()
     {
-        var connectionString = _configuration.GetConnectionString("DefaultConnection");
-
-        if (string.IsNullOrEmpty(connectionString))
-        {
-            throw new InvalidOperationException("DefaultConnection was not found in appsettings.json.");
-        }
-
-        return new MySqlConnection(connectionString);
+        return new MySqlConnection(_connectionString);
     }
 }

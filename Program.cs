@@ -1,14 +1,18 @@
 using System.Reflection;
 using SupermarketSystem.Api.Interface;
 using SupermarketSystem.Api.Data;
-using SupermarketSystem.Api.Services.Jwt; // 👈 استدعاء IJwtService & JwtService
+using SupermarketSystem.Api.Services.Jwt;
+using DotNetEnv; // 👈 استدعاء مكتبة DotNetEnv
+
+// 0️⃣ تحميل ملف الـ .env أولاً
+Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
 // 1️⃣ تسجيل الـ Connection Factory
 builder.Services.AddScoped<IDbConnectionFactory, DbConnectionFactory>();
 
-// 2️⃣ تسجيل خدمة الـ JWT (حل مشكلة IJwtService)
+// 2️⃣ تسجيل خدمة الـ JWT
 builder.Services.AddScoped<IJwtService, JwtService>();
 
 // 3️⃣ إضافة خدمات الـ Controllers
