@@ -48,10 +48,16 @@ public class ProductsController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateProductCommand command)
     {
-        if (id != command.Id)
-            return BadRequest("Route id and body id must match.");
+        command.Id = id;
 
         var result = await _mediator.Send(command);
         return Ok(result);
+    }
+
+    [HttpPatch("{id}/deactivate")]
+    public async Task<IActionResult> Deactivate(int id)
+    {
+        await _mediator.Send(new DeactivateProductCommand { Id = id });
+        return NoContent();
     }
 }

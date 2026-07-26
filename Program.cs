@@ -6,6 +6,7 @@ using SupermarketSystem.Api.Data;
 using SupermarketSystem.Api.Services.Jwt;
 using SupermarketSystem.Api.Middleware;
 using DotNetEnv; // 👈 استدعاء مكتبة DotNetEnv
+using System.Text.Json.Serialization;
 
 // 0️⃣ تحميل ملف الـ .env أولاً
 Env.Load();
@@ -19,7 +20,16 @@ builder.Services.AddScoped<IDbConnectionFactory, DbConnectionFactory>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 
 // 3️⃣ إضافة خدمات الـ Controllers
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.NumberHandling = JsonNumberHandling.Strict;
+    });
+
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.NumberHandling = JsonNumberHandling.Strict;
+});
 
 // 4️⃣ إضافة MediatR لقراءة كافة الـ Handlers في المشروع
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
