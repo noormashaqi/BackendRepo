@@ -37,4 +37,21 @@ public class ProductsController : ControllerBase
 
         return Ok(result);
     }
+
+    [HttpPost]
+    public async Task<IActionResult> Create([FromBody] CreateProductCommand command)
+    {
+        var result = await _mediator.Send(command);
+        return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateProductCommand command)
+    {
+        if (id != command.Id)
+            return BadRequest("Route id and body id must match.");
+
+        var result = await _mediator.Send(command);
+        return Ok(result);
+    }
 }

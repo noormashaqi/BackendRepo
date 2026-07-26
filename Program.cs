@@ -1,7 +1,10 @@
 using System.Reflection;
+using FluentValidation;
+using MediatR;
 using SupermarketSystem.Api.Interface;
 using SupermarketSystem.Api.Data;
 using SupermarketSystem.Api.Services.Jwt;
+using SupermarketSystem.Api.Middleware;
 using DotNetEnv; // 👈 استدعاء مكتبة DotNetEnv
 
 // 0️⃣ تحميل ملف الـ .env أولاً
@@ -21,10 +24,19 @@ builder.Services.AddControllers();
 // 4️⃣ إضافة MediatR لقراءة كافة الـ Handlers في المشروع
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
 
+// 4.1️⃣ تسجيل كل الـ FluentValidation Validators تلقائيًا
+builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+
+// 4.2️⃣ ربط الـ Validators بالـ MediatR Pipeline
+builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+
 // 5️⃣ إضافة OpenAPI/Swagger
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+// 5.1️⃣ ميدل وير معالجة الأخطاء - لازم يكون أول شي بالـ pipeline
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
