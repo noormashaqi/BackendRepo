@@ -1,6 +1,5 @@
 using Dapper;
 using MediatR;
-using MySqlConnector;
 using SupermarketSystem.Api.Interface;
 
 namespace SupermarketSystem.Api.Features.Invoices.Create;
@@ -14,14 +13,11 @@ public class CreateInvoiceHandler : IRequestHandler<CreateInvoiceCommand, Create
         _connectionFactory = connectionFactory;
     }
 
-    public async Task<CreateInvoiceResult> Handle(
-        CreateInvoiceCommand request,
-        CancellationToken cancellationToken)
+    public async Task<CreateInvoiceResult> Handle(CreateInvoiceCommand request, CancellationToken cancellationToken)
     {
-        using var connection = (MySqlConnection)_connectionFactory.CreateConnection();
-        await connection.OpenAsync(cancellationToken);
-
-        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        using var connection = _connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
 
         try
         {
@@ -30,16 +26,13 @@ public class CreateInvoiceHandler : IRequestHandler<CreateInvoiceCommand, Create
 
             var products = (await connection.QueryAsync<ProductStockDto>(
                 new CommandDefinition(
-                    @"SELECT Id, Name, SellingPrice, Quantity, IsActive
-                      FROM Products
-                      WHERE Id IN @Ids
-                      FOR UPDATE",
+                    "SELECT Id, Name, SellingPrice, Quantity, IsActive FROM Products WHERE Id IN @Ids FOR UPDATE",
                     new { Ids = productIds },
                     transaction: transaction,
-                    cancellationToken: cancellationToken)))
-                .ToDictionary(p => p.Id);
+                    cancellationToken: cancellationToken)
+            )).ToDictionary(p => p.Id);
 
-            // 2) التحقق من المنتجات
+            // 2) التحقق: المنتج موجود، مفعّل، وكميته كافية
             foreach (var item in request.Items)
             {
                 if (!products.TryGetValue(item.ProductId, out var product))
@@ -53,7 +46,7 @@ public class CreateInvoiceHandler : IRequestHandler<CreateInvoiceCommand, Create
                         $"Insufficient stock for product {item.ProductId}. Available: {product.Quantity}, requested: {item.Quantity}.");
             }
 
-            // 3) إنشاء رقم الفاتورة
+            // 3) توليد InvoiceNumber (تاريخ اليوم + رقم متسلسل يصفر يوميًا)
             var today = DateTime.UtcNow.Date;
             var todayPrefix = today.ToString("yyyyMMdd");
 
@@ -61,14 +54,9 @@ public class CreateInvoiceHandler : IRequestHandler<CreateInvoiceCommand, Create
                 new CommandDefinition(
                     @"SELECT MAX(CAST(SUBSTRING_INDEX(InvoiceNumber, '-', -1) AS UNSIGNED))
                       FROM Invoices
-                      WHERE Date >= @Today
-                        AND Date < @Tomorrow
+                      WHERE Date >= @Today AND Date < @Tomorrow
                       FOR UPDATE",
-                    new
-                    {
-                        Today = today,
-                        Tomorrow = today.AddDays(1)
-                    },
+                    new { Today = today, Tomorrow = today.AddDays(1) },
                     transaction: transaction,
                     cancellationToken: cancellationToken));
 
@@ -77,48 +65,25 @@ public class CreateInvoiceHandler : IRequestHandler<CreateInvoiceCommand, Create
 
             // 4) حساب الإجماليات
             decimal totalBeforeDiscount = 0;
-
             var lineItems = new List<(int ProductId, string Name, decimal Price, int Quantity, decimal LineTotal)>();
 
             foreach (var item in request.Items)
             {
                 var product = products[item.ProductId];
-
                 var lineTotal = product.SellingPrice * item.Quantity;
-
                 totalBeforeDiscount += lineTotal;
-
-                lineItems.Add((
-                    item.ProductId,
-                    product.Name,
-                    product.SellingPrice,
-                    item.Quantity,
-                    lineTotal));
+                lineItems.Add((item.ProductId, product.Name, product.SellingPrice, item.Quantity, lineTotal));
             }
 
-            var totalAfterDiscount =
-                totalBeforeDiscount * (1 - request.DiscountPercentage / 100m);
+            var totalAfterDiscount = totalBeforeDiscount * (1 - request.DiscountPercentage / 100m);
 
-            // 5) إنشاء الفاتورة
+            // 5) إدخال الفاتورة
             var invoiceId = await connection.ExecuteScalarAsync<int>(
                 new CommandDefinition(
                     @"INSERT INTO Invoices
-                        (InvoiceNumber,
-                         EmployeeId,
-                         Date,
-                         TotalBeforeDiscount,
-                         DiscountPercentage,
-                         TotalAfterDiscount,
-                         HasReturn)
+                        (InvoiceNumber, EmployeeId, Date, TotalBeforeDiscount, DiscountPercentage, TotalAfterDiscount, HasReturn)
                       VALUES
-                        (@InvoiceNumber,
-                         @EmployeeId,
-                         @Date,
-                         @TotalBeforeDiscount,
-                         @DiscountPercentage,
-                         @TotalAfterDiscount,
-                         FALSE);
-
+                        (@InvoiceNumber, @EmployeeId, @Date, @TotalBeforeDiscount, @DiscountPercentage, @TotalAfterDiscount, FALSE);
                       SELECT LAST_INSERT_ID();",
                     new
                     {
@@ -132,25 +97,15 @@ public class CreateInvoiceHandler : IRequestHandler<CreateInvoiceCommand, Create
                     transaction: transaction,
                     cancellationToken: cancellationToken));
 
-            // 6) إضافة عناصر الفاتورة وتحديث المخزون
+            // 6) إدخال InvoiceItems + إنقاص المخزون
             foreach (var line in lineItems)
             {
                 await connection.ExecuteAsync(
                     new CommandDefinition(
                         @"INSERT INTO InvoiceItems
-                            (InvoiceId,
-                             ProductId,
-                             ProductNameSnapshot,
-                             UnitPriceSnapshot,
-                             Quantity,
-                             LineTotal)
+                            (InvoiceId, ProductId, ProductNameSnapshot, UnitPriceSnapshot, Quantity, LineTotal)
                           VALUES
-                            (@InvoiceId,
-                             @ProductId,
-                             @ProductNameSnapshot,
-                             @UnitPriceSnapshot,
-                             @Quantity,
-                             @LineTotal)",
+                            (@InvoiceId, @ProductId, @ProductNameSnapshot, @UnitPriceSnapshot, @Quantity, @LineTotal)",
                         new
                         {
                             InvoiceId = invoiceId,
@@ -165,33 +120,22 @@ public class CreateInvoiceHandler : IRequestHandler<CreateInvoiceCommand, Create
 
                 await connection.ExecuteAsync(
                     new CommandDefinition(
-                        @"UPDATE Products
-                          SET Quantity = Quantity - @Qty
-                          WHERE Id = @ProductId",
-                        new
-                        {
-                            Qty = line.Quantity,
-                            line.ProductId
-                        },
+                        "UPDATE Products SET Quantity = Quantity - @Qty WHERE Id = @ProductId",
+                        new { Qty = line.Quantity, line.ProductId },
                         transaction: transaction,
                         cancellationToken: cancellationToken));
             }
 
-            await transaction.CommitAsync(cancellationToken);
+            transaction.Commit();
 
             return new CreateInvoiceResult(invoiceId, invoiceNumber);
         }
         catch
         {
-            await transaction.RollbackAsync(cancellationToken);
+            transaction.Rollback();
             throw;
         }
     }
 }
 
-file record ProductStockDto(
-    int Id,
-    string Name,
-    decimal SellingPrice,
-    int Quantity,
-    bool IsActive);
+file record ProductStockDto(int Id, string Name, decimal SellingPrice, int Quantity, bool IsActive);
