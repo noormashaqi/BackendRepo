@@ -10,4 +10,5 @@ public class CreateProductCommand : IRequest<ProductDto>
     public decimal SellingPrice { get; set; }
     public int Quantity { get; set; }
     public string Unit { get; set; } = string.Empty;
+    public int EmployeeId { get; set; }
 }

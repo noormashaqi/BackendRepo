@@ -29,6 +29,9 @@ public class CreateProductValidator : AbstractValidator<CreateProductCommand>
 
         RuleFor(x => x.CategoryId)
             .MustAsync(CategoryExists).WithMessage("CategoryId does not exist");
+
+        RuleFor(x => x.EmployeeId)
+            .GreaterThan(0).WithMessage("EmployeeId is required");
     }
 
     private async Task<bool> CategoryExists(int categoryId, CancellationToken cancellationToken)

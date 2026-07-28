@@ -16,7 +16,7 @@ CREATE TABLE Invoices (
 CREATE TABLE InvoiceItems (
     Id BIGINT AUTO_INCREMENT PRIMARY KEY,
     InvoiceId BIGINT NOT NULL,
-    ProductId BIGINT NOT NULL,
+    ProductId INT NOT NULL, 
     ProductNameSnapshot VARCHAR(255) NOT NULL,
     UnitPriceSnapshot DECIMAL(10,2) NOT NULL,
     Quantity INT NOT NULL,
@@ -28,5 +28,5 @@ CREATE TABLE InvoiceItems (
 
     CONSTRAINT FK_InvoiceItems_Product
         FOREIGN KEY (ProductId)
-        REFERENCES Products(Id)
+        REFERENCES product(Id)
 );
