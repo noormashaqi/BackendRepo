@@ -26,7 +26,7 @@ public class CreateInvoiceHandler : IRequestHandler<CreateInvoiceCommand, Create
 
             var products = (await connection.QueryAsync<ProductStockDto>(
                 new CommandDefinition(
-                    "SELECT Id, Name, SellingPrice, Quantity, IsActive FROM Products WHERE Id IN @Ids FOR UPDATE",
+                    "SELECT Id, Name, SellingPrice, Quantity, IsActive FROM Product WHERE Id IN @Ids FOR UPDATE",
                     new { Ids = productIds },
                     transaction: transaction,
                     cancellationToken: cancellationToken)
@@ -120,7 +120,7 @@ public class CreateInvoiceHandler : IRequestHandler<CreateInvoiceCommand, Create
 
                 await connection.ExecuteAsync(
                     new CommandDefinition(
-                        "UPDATE Products SET Quantity = Quantity - @Qty WHERE Id = @ProductId",
+                        "UPDATE Product SET Quantity = Quantity - @Qty WHERE Id = @ProductId",
                         new { Qty = line.Quantity, line.ProductId },
                         transaction: transaction,
                         cancellationToken: cancellationToken));

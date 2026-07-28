@@ -1,25 +1,47 @@
 using System.Reflection;
+using System.Text;
+using System.Text.Json.Serialization;
+using DotNetEnv;
 using FluentValidation;
 using MediatR;
-using SupermarketSystem.Api.Interface;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using SupermarketSystem.Api.Data;
-using SupermarketSystem.Api.Services.Jwt;
+using SupermarketSystem.Api.Interface;
 using SupermarketSystem.Api.Middleware;
-using DotNetEnv; // 👈 استدعاء مكتبة DotNetEnv
-using System.Text.Json.Serialization;
+using SupermarketSystem.Api.Services.Jwt;
 
-// 0️⃣ تحميل ملف الـ .env أولاً
 Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1️⃣ تسجيل الـ Connection Factory
 builder.Services.AddScoped<IDbConnectionFactory, DbConnectionFactory>();
-
-// 2️⃣ تسجيل خدمة الـ JWT
 builder.Services.AddScoped<IJwtService, JwtService>();
 
-// 3️⃣ إضافة خدمات الـ Controllers
+var jwtSecret = builder.Configuration["Jwt:Secret"]
+    ?? throw new InvalidOperationException("Jwt:Secret is missing from configuration.");
+var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+var jwtAudience = builder.Configuration["Jwt:Audience"];
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
+            ValidateIssuer = !string.IsNullOrWhiteSpace(jwtIssuer),
+            ValidIssuer = jwtIssuer,
+            ValidateAudience = !string.IsNullOrWhiteSpace(jwtAudience),
+            ValidAudience = jwtAudience,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+
+builder.Services.AddAuthorization();
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -31,21 +53,14 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.NumberHandling = JsonNumberHandling.Strict;
 });
 
-// 4️⃣ إضافة MediatR لقراءة كافة الـ Handlers في المشروع
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
-
-// 4.1️⃣ تسجيل كل الـ FluentValidation Validators تلقائيًا
+builder.Services.AddMediatR(cfg =>
+    cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
 builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
-
-// 4.2️⃣ ربط الـ Validators بالـ MediatR Pipeline
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
-
-// 5️⃣ إضافة OpenAPI/Swagger
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// 5.1️⃣ ميدل وير معالجة الأخطاء - لازم يكون أول شي بالـ pipeline
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
@@ -57,9 +72,9 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-// app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
 
-// 6️⃣ ربط الـ Controllers
 app.MapControllers();
 
 app.Run();
