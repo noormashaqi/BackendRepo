@@ -1,4 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Cryptography;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
@@ -14,7 +15,7 @@ public class JwtService : IJwtService
         _configuration = configuration;
     }
 
-    public (string Token, DateTime ExpiresAt) GenerateToken(Employee employee, List<string> permissions)
+    public (string Token, DateTime ExpiresAt) GenerateAccessToken(Employee employee, List<string> permissions)
     {
         var secret = _configuration["Jwt:Secret"]
             ?? throw new InvalidOperationException("Jwt:Secret is missing from configuration.");
@@ -51,5 +52,26 @@ public class JwtService : IJwtService
         var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
 
         return (tokenString, expiresAt);
+    }
+
+    public string GenerateRefreshToken()
+    {
+        var bytes = RandomNumberGenerator.GetBytes(64);
+        return Convert.ToBase64String(bytes);
+    }
+
+    public string ComputeRefreshTokenHash(string refreshToken)
+    {
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(refreshToken));
+        return Convert.ToHexString(bytes);
+    }
+
+    public DateTime GetRefreshTokenExpiry()
+    {
+        var expiryDays = int.TryParse(_configuration["Jwt:RefreshTokenExpiryDays"], out var days)
+            ? days
+            : 14;
+
+        return DateTime.UtcNow.AddDays(expiryDays);
     }
 }

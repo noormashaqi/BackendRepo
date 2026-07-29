@@ -2,8 +2,11 @@ namespace SupermarketSystem.Api.Services.Jwt;
 
 public interface IJwtService
 {
-    /// <summary>
-    /// Builds a signed JWT for the given employee, embedding their permissions as claims.
-    /// </summary>
-    (string Token, DateTime ExpiresAt) GenerateToken(Employee employee, List<string> permissions);
+    (string Token, DateTime ExpiresAt) GenerateAccessToken(Employee employee, List<string> permissions);
+
+    string GenerateRefreshToken();
+
+    string ComputeRefreshTokenHash(string refreshToken);
+
+    DateTime GetRefreshTokenExpiry();
 }

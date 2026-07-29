@@ -1,13 +1,7 @@
 namespace SupermarketSystem.Api.DTOs.Auth;
 
-public class LoginResponseDto
+public class MeResponseDto
 {
-    public string AccessToken { get; set; } = string.Empty;
-
-    public string RefreshToken { get; set; } = string.Empty;
-
-    public DateTime ExpiresAt { get; set; }
-
     public long EmployeeId { get; set; }
 
     public string FullName { get; set; } = string.Empty;
@@ -16,5 +10,9 @@ public class LoginResponseDto
 
     public string Role { get; set; } = string.Empty;
 
-    public List<string> Permissions { get; set; } = new();
+    public bool IsActive { get; set; }
+
+    public DateTime CreatedAt { get; set; }
+
+    public IReadOnlyCollection<string> Permissions { get; set; } = Array.Empty<string>();
 }
