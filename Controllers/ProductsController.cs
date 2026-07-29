@@ -69,4 +69,11 @@ public class ProductsController : ControllerBase
         var result = await _mediator.Send(command);
         return Ok(result);
     }
+
+    [HttpGet("{id}/stock/history")]
+    public async Task<IActionResult> GetStockHistory(int id)
+    {
+        var result = await _mediator.Send(new GetStockHistoryQuery { ProductId = id });
+        return Ok(result);
+    }
 }
