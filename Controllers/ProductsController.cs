@@ -60,4 +60,13 @@ public class ProductsController : ControllerBase
         await _mediator.Send(new DeactivateProductCommand { Id = id });
         return NoContent();
     }
+
+    [HttpPost("{id}/stock/add")]
+    public async Task<IActionResult> AddStock(int id, [FromBody] AddStockCommand command)
+    {
+        command.ProductId = id;
+
+        var result = await _mediator.Send(command);
+        return Ok(result);
+    }
 }
