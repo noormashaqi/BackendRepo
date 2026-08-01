@@ -57,7 +57,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResult>
 
         const string permissionsSql = @"
             SELECT PermissionKey
-            FROM EmployeePermission
+            FROM EmployeePermissions
             WHERE EmployeeId = @EmployeeId;";
 
         var permissions = (await connection.QueryAsync<string>(
@@ -65,7 +65,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResult>
 
         // تسجيل بداية الشفت - هاد اللي بيغذي تقرير "كل موظف ايمتا دخل وايمتا خرج"
         const string insertAttendanceSql = @"
-            INSERT INTO AttendanceLog (EmployeeId, LoginTime)
+            INSERT INTO AttendanceLogs (EmployeeId, LoginTime)
             VALUES (@EmployeeId, @LoginTime);";
 
         await connection.ExecuteAsync(insertAttendanceSql, new

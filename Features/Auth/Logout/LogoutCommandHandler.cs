@@ -19,7 +19,7 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand, bool>
 
         // بيسكر آخر سطر Attendance مفتوح (اللي لسا ماله LogoutTime) لنفس الموظف
         const string sql = @"
-            UPDATE AttendanceLog
+            UPDATE AttendanceLogs
             SET LogoutTime = @LogoutTime
             WHERE EmployeeId = @EmployeeId
               AND LogoutTime IS NULL
