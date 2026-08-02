@@ -23,7 +23,20 @@ public class ProductsController : ControllerBase
             CategoryId = categoryId,
             ActiveOnly = activeOnly
         });
+        return Ok(result);
+    }
 
+    [HttpGet("low-stock")]
+    public async Task<IActionResult> GetLowStock()
+    {
+        var result = await _mediator.Send(new GetLowStockProductsQuery());
+        return Ok(result);
+    }
+
+    [HttpGet("out-of-stock")]
+    public async Task<IActionResult> GetOutOfStock()
+    {
+        var result = await _mediator.Send(new GetOutOfStockProductsQuery());
         return Ok(result);
     }
 
@@ -31,10 +44,8 @@ public class ProductsController : ControllerBase
     public async Task<IActionResult> GetById(int id)
     {
         var result = await _mediator.Send(new GetProductByIdQuery { Id = id });
-
         if (result is null)
             return NotFound();
-
         return Ok(result);
     }
 
@@ -49,7 +60,6 @@ public class ProductsController : ControllerBase
     public async Task<IActionResult> Update(int id, [FromBody] UpdateProductCommand command)
     {
         command.Id = id;
-
         var result = await _mediator.Send(command);
         return Ok(result);
     }
@@ -65,7 +75,6 @@ public class ProductsController : ControllerBase
     public async Task<IActionResult> AddStock(int id, [FromBody] AddStockCommand command)
     {
         command.ProductId = id;
-
         var result = await _mediator.Send(command);
         return Ok(result);
     }
@@ -74,20 +83,6 @@ public class ProductsController : ControllerBase
     public async Task<IActionResult> GetStockHistory(int id)
     {
         var result = await _mediator.Send(new GetStockHistoryQuery { ProductId = id });
-        return Ok(result);
-    }
-
-    [HttpGet("low-stock")]
-    public async Task<IActionResult> GetLowStock()
-    {
-        var result = await _mediator.Send(new GetLowStockProductsQuery());
-        return Ok(result);
-    }
-
-    [HttpGet("out-of-stock")]
-    public async Task<IActionResult> GetOutOfStock()
-    {
-        var result = await _mediator.Send(new GetOutOfStockProductsQuery());
         return Ok(result);
     }
 }
