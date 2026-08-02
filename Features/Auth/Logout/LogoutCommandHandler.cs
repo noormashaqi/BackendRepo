@@ -29,16 +29,17 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand, LogoutResult>
         var refreshTokenHash = _jwtService.ComputeRefreshTokenHash(request.RefreshToken);
 
         using var connection = _dbConnectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
 
-        // بيسكر آخر سطر Attendance مفتوح (اللي لسا ماله LogoutTime) لنفس الموظف
-        const string sql = @"
+        // 1️⃣ إغلاق آخر سطر حضور مفتوح للموظف
+        const string closeAttendanceSql = @"
             UPDATE AttendanceLog
             SET LogoutTime = @LogoutTime
             WHERE EmployeeId = @EmployeeId
               AND LogoutTime IS NULL
             ORDER BY LoginTime DESC
-            LIMIT 1;
-            """;
+            LIMIT 1;";
 
         await connection.ExecuteAsync(
             closeAttendanceSql,
@@ -46,6 +47,24 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand, LogoutResult>
             {
                 request.EmployeeId,
                 LogoutTime = DateTime.UtcNow
+            },
+            transaction);
+
+        // 2️⃣ إلغاء صلاحية الـ Refresh Token (Revoke)
+        const string revokeTokenSql = @"
+            UPDATE RefreshTokens
+            SET RevokedAt = @RevokedAt
+            WHERE EmployeeId = @EmployeeId
+              AND TokenHash = @TokenHash
+              AND RevokedAt IS NULL;";
+
+        await connection.ExecuteAsync(
+            revokeTokenSql,
+            new
+            {
+                request.EmployeeId,
+                TokenHash = refreshTokenHash,
+                RevokedAt = DateTime.UtcNow
             },
             transaction);
 

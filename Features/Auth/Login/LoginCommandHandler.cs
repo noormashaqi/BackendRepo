@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Dapper;
 using MediatR;
 using SupermarketSystem.Api.DTOs.Auth;
@@ -43,15 +45,20 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResult>
         if (!passwordValid)
             return LoginResult.Fail(InvalidCredentialsMessage);
 
+        // 1️⃣ إنشاء الاتصال بـ Database والـ Transaction
+        using var connection = _dbConnectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
+
         const string permissionsSql = @"
             SELECT PermissionKey
             FROM EmployeePermission
             WHERE EmployeeId = @EmployeeId;";
 
         var permissions = (await connection.QueryAsync<string>(
-            permissionsSql, new { EmployeeId = employee.Id })).ToList();
+            permissionsSql, new { EmployeeId = employee.Id }, transaction)).ToList();
 
-        // تسجيل بداية الشفت - هاد اللي بيغذي تقرير "كل موظف ايمتا دخل وايمتا خرج"
+        // 2️⃣ تسجيل بداية الشفت (AttendanceLog)
         const string insertAttendanceSql = @"
             INSERT INTO AttendanceLog (EmployeeId, LoginTime)
             VALUES (@EmployeeId, @LoginTime);";
@@ -64,6 +71,11 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResult>
                 LoginTime = DateTime.UtcNow
             },
             transaction);
+
+        // 3️⃣ توليد الـ Refresh Token وتجهيز الـ Hash الخاص به
+        var refreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+        var refreshTokenHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(refreshToken)));
+        var refreshTokenExpiresAt = DateTime.UtcNow.AddDays(7); // صالحة لمدة 7 أيام مثلاً
 
         const string insertRefreshTokenSql = """
             INSERT INTO RefreshTokens
@@ -96,8 +108,10 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResult>
             },
             transaction);
 
+        // 4️⃣ تأكيد العملية للـ Database
         transaction.Commit();
 
+        // 5️⃣ إنتاج الـ Access Token وإرجاع النتيجة
         var (accessToken, expiresAt) = _jwtService.GenerateAccessToken(employee, permissions);
 
         return LoginResult.Ok(new LoginResponseDto
