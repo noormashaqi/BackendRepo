@@ -76,18 +76,4 @@ public class ProductsController : ControllerBase
         var result = await _mediator.Send(new GetStockHistoryQuery { ProductId = id });
         return Ok(result);
     }
-
-    [HttpGet("low-stock")]
-    public async Task<IActionResult> GetLowStock()
-    {
-        var result = await _mediator.Send(new GetLowStockProductsQuery());
-        return Ok(result);
-    }
-
-    [HttpGet("out-of-stock")]
-    public async Task<IActionResult> GetOutOfStock()
-    {
-        var result = await _mediator.Send(new GetOutOfStockProductsQuery());
-        return Ok(result);
-    }
 }
