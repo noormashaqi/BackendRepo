@@ -29,34 +29,10 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand, LogoutResult>
         var refreshTokenHash = _jwtService.ComputeRefreshTokenHash(request.RefreshToken);
 
         using var connection = _dbConnectionFactory.CreateConnection();
-        connection.Open();
-        using var transaction = connection.BeginTransaction();
 
-        const string revokeRefreshTokenSql = """
-            UPDATE RefreshTokens
-            SET RevokedAt = UTC_TIMESTAMP()
-            WHERE EmployeeId = @EmployeeId
-              AND TokenHash = @TokenHash
-              AND RevokedAt IS NULL;
-            """;
-
-        var revokedRows = await connection.ExecuteAsync(
-            revokeRefreshTokenSql,
-            new
-            {
-                request.EmployeeId,
-                TokenHash = refreshTokenHash
-            },
-            transaction);
-
-        if (revokedRows == 0)
-        {
-            transaction.Rollback();
-            return LogoutResult.Fail("Refresh token was not found or already revoked.");
-        }
-
-        const string closeAttendanceSql = """
-            UPDATE AttendanceLogs
+        // بيسكر آخر سطر Attendance مفتوح (اللي لسا ماله LogoutTime) لنفس الموظف
+        const string sql = @"
+            UPDATE AttendanceLog
             SET LogoutTime = @LogoutTime
             WHERE EmployeeId = @EmployeeId
               AND LogoutTime IS NULL

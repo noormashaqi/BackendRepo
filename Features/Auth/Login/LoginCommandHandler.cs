@@ -43,23 +43,18 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResult>
         if (!passwordValid)
             return LoginResult.Fail(InvalidCredentialsMessage);
 
-        var permissions = await AuthDataAccess.GetPermissionsAsync(
-            _dbConnectionFactory,
-            employee,
-            cancellationToken);
+        const string permissionsSql = @"
+            SELECT PermissionKey
+            FROM EmployeePermission
+            WHERE EmployeeId = @EmployeeId;";
 
-        var refreshToken = _jwtService.GenerateRefreshToken();
-        var refreshTokenHash = _jwtService.ComputeRefreshTokenHash(refreshToken);
-        var refreshTokenExpiresAt = _jwtService.GetRefreshTokenExpiry();
+        var permissions = (await connection.QueryAsync<string>(
+            permissionsSql, new { EmployeeId = employee.Id })).ToList();
 
-        using var connection = _dbConnectionFactory.CreateConnection();
-        connection.Open();
-        using var transaction = connection.BeginTransaction();
-
-        const string insertAttendanceSql = """
-            INSERT INTO AttendanceLogs (EmployeeId, LoginTime)
-            VALUES (@EmployeeId, @LoginTime);
-            """;
+        // تسجيل بداية الشفت - هاد اللي بيغذي تقرير "كل موظف ايمتا دخل وايمتا خرج"
+        const string insertAttendanceSql = @"
+            INSERT INTO AttendanceLog (EmployeeId, LoginTime)
+            VALUES (@EmployeeId, @LoginTime);";
 
         await connection.ExecuteAsync(
             insertAttendanceSql,
