@@ -34,7 +34,7 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand, LogoutResult>
 
         // 1️⃣ إغلاق آخر سطر حضور مفتوح للموظف
         const string closeAttendanceSql = @"
-            UPDATE AttendanceLog
+            UPDATE AttendanceLogs
             SET LogoutTime = @LogoutTime
             WHERE EmployeeId = @EmployeeId
               AND LogoutTime IS NULL

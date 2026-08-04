@@ -45,22 +45,19 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResult>
         if (!passwordValid)
             return LoginResult.Fail(InvalidCredentialsMessage);
 
+        var permissions = await AuthDataAccess.GetPermissionsAsync(
+            _dbConnectionFactory,
+            employee,
+            cancellationToken);
+
         // 1️⃣ إنشاء الاتصال بـ Database والـ Transaction
         using var connection = _dbConnectionFactory.CreateConnection();
         connection.Open();
         using var transaction = connection.BeginTransaction();
 
-        const string permissionsSql = @"
-            SELECT PermissionKey
-            FROM EmployeePermission
-            WHERE EmployeeId = @EmployeeId;";
-
-        var permissions = (await connection.QueryAsync<string>(
-            permissionsSql, new { EmployeeId = employee.Id }, transaction)).ToList();
-
-        // 2️⃣ تسجيل بداية الشفت (AttendanceLog)
+        // 2️⃣ تسجيل بداية الشفت (AttendanceLogs)
         const string insertAttendanceSql = @"
-            INSERT INTO AttendanceLog (EmployeeId, LoginTime)
+            INSERT INTO AttendanceLogs (EmployeeId, LoginTime)
             VALUES (@EmployeeId, @LoginTime);";
 
         await connection.ExecuteAsync(

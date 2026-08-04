@@ -1,4 +1,4 @@
-public class AttendanceLog
+public class AttendanceLogs
 {
     public long Id { get; set; }
 

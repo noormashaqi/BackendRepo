@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS StockHistory (
 
     CONSTRAINT FK_StockHistory_Product 
         FOREIGN KEY (ProductId) 
-        REFERENCES product(Id),
+        REFERENCES Product(Id),
 
     CONSTRAINT FK_StockHistory_Employee 
         FOREIGN KEY (EmployeeId) 

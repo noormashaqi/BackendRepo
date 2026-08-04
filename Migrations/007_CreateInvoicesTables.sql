@@ -28,5 +28,5 @@ CREATE TABLE InvoiceItems (
 
     CONSTRAINT FK_InvoiceItems_Product
         FOREIGN KEY (ProductId)
-        REFERENCES product(Id)
+        REFERENCES Product(Id)
 );

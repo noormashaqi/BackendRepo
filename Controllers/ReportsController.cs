@@ -1,5 +1,8 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SupermarketSystem.Api.Common;
+using SupermarketSystem.Api.Constants;
 using SupermarketSystem.Api.DTOs.Reports;
 using SupermarketSystem.Api.Features.Reports;
 
@@ -7,6 +10,7 @@ namespace SupermarketSystem.Api.Controllers;
 
 [ApiController]
 [Route("api/reports")]
+[Authorize]
 public class ReportsController : ControllerBase
 {
     private readonly ISender _sender;
@@ -17,6 +21,7 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("sales")]
+    [PermissionRequirement(PermissionKeys.ReportsView)]
     public async Task<ActionResult<SalesReportDto>> GetSalesReport(
         [FromQuery] DateTime? fromDate,
         [FromQuery] DateTime? toDate,
@@ -31,6 +36,7 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("inventory")]
+    [PermissionRequirement(PermissionKeys.ReportsView)]
     public async Task<ActionResult<InventoryReportDto>> GetInventoryReport(
         [FromQuery] int? categoryId,
         [FromQuery] bool activeOnly = true,
@@ -44,6 +50,7 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("attendance")]
+    [PermissionRequirement(PermissionKeys.ReportsView)]
     public async Task<ActionResult<AttendanceReportDto>> GetAttendanceReport(
         [FromQuery] DateTime? fromDate,
         [FromQuery] DateTime? toDate,
@@ -58,6 +65,7 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("employees")]
+    [PermissionRequirement(PermissionKeys.ReportsView)]
     public async Task<ActionResult<EmployeesReportDto>> GetEmployeesReport(
         [FromQuery] bool? activeOnly,
         [FromQuery] string? role,

@@ -58,6 +58,36 @@ public class ExceptionHandlingMiddleware
 
             await context.Response.WriteAsync(result);
         }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Invalid operation: {Message}", ex.Message);
+
+            context.Response.ContentType = "application/json";
+            context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+
+            var result = JsonSerializer.Serialize(new
+            {
+                status = 400,
+                message = ex.Message
+            });
+
+            await context.Response.WriteAsync(result);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning(ex, "Key not found: {Message}", ex.Message);
+
+            context.Response.ContentType = "application/json";
+            context.Response.StatusCode = (int)HttpStatusCode.NotFound;
+
+            var result = JsonSerializer.Serialize(new
+            {
+                status = 404,
+                message = ex.Message
+            });
+
+            await context.Response.WriteAsync(result);
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "An unhandled exception occurred");

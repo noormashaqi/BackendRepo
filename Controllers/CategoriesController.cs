@@ -1,11 +1,15 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SupermarketSystem.Api.Common;
+using SupermarketSystem.Api.Constants;
 using SupermarketSystem.Api.Services.Categories;
 
 namespace SupermarketSystem.Api.Controllers;
 
 [ApiController]
 [Route("api/categories")]
+[Authorize]
 public class CategoriesController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -16,6 +20,7 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpGet]
+    [PermissionRequirement(PermissionKeys.CategoriesView)]
     public async Task<IActionResult> GetAll()
     {
         var result = await _mediator.Send(new GetCategoriesQuery());
@@ -23,6 +28,7 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpPost]
+    [PermissionRequirement(PermissionKeys.CategoriesCreate)]
     public async Task<IActionResult> Create([FromBody] CreateCategoryCommand command)
     {
         var result = await _mediator.Send(command);

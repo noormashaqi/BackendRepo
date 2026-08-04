@@ -1,4 +1,4 @@
-public class EmployeePermission
+public class EmployeePermissions
 {
     public long Id { get; set; }
 

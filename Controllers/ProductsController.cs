@@ -1,11 +1,17 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SupermarketSystem.Api.Common;
+using SupermarketSystem.Api.Constants;
 using SupermarketSystem.Api.Services.Products;
 
 namespace SupermarketSystem.Api.Controllers;
 
 [ApiController]
 [Route("api/products")]
+[Authorize]
 public class ProductsController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -16,6 +22,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet]
+    [PermissionRequirement(PermissionKeys.ProductsView)]
     public async Task<IActionResult> GetAll([FromQuery] int? categoryId, [FromQuery] bool activeOnly = true)
     {
         var result = await _mediator.Send(new GetProductsQuery
@@ -27,6 +34,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet("low-stock")]
+    [PermissionRequirement(PermissionKeys.ProductsView)]
     public async Task<IActionResult> GetLowStock()
     {
         var result = await _mediator.Send(new GetLowStockProductsQuery());
@@ -34,6 +42,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet("out-of-stock")]
+    [PermissionRequirement(PermissionKeys.ProductsView)]
     public async Task<IActionResult> GetOutOfStock()
     {
         var result = await _mediator.Send(new GetOutOfStockProductsQuery());
@@ -41,6 +50,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [PermissionRequirement(PermissionKeys.ProductsView)]
     public async Task<IActionResult> GetById(int id)
     {
         var result = await _mediator.Send(new GetProductByIdQuery { Id = id });
@@ -50,6 +60,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpPost]
+    [PermissionRequirement(PermissionKeys.ProductsCreate)]
     public async Task<IActionResult> Create([FromBody] CreateProductCommand command)
     {
         var result = await _mediator.Send(command);
@@ -57,6 +68,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [PermissionRequirement(PermissionKeys.ProductsUpdate)]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateProductCommand command)
     {
         command.Id = id;
@@ -65,6 +77,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpPatch("{id}/deactivate")]
+    [PermissionRequirement(PermissionKeys.ProductsDeactivate)]
     public async Task<IActionResult> Deactivate(int id)
     {
         await _mediator.Send(new DeactivateProductCommand { Id = id });
@@ -72,17 +85,34 @@ public class ProductsController : ControllerBase
     }
 
     [HttpPost("{id}/stock/add")]
+    [PermissionRequirement(PermissionKeys.ProductsStockAdd)]
     public async Task<IActionResult> AddStock(int id, [FromBody] AddStockCommand command)
     {
+        var employeeId = GetCurrentEmployeeId();
+        if (employeeId is null)
+            return Unauthorized();
+
         command.ProductId = id;
+        command.EmployeeId = employeeId.Value;
         var result = await _mediator.Send(command);
         return Ok(result);
     }
 
     [HttpGet("{id}/stock/history")]
+    [PermissionRequirement(PermissionKeys.ProductsView)]
     public async Task<IActionResult> GetStockHistory(int id)
     {
         var result = await _mediator.Send(new GetStockHistoryQuery { ProductId = id });
         return Ok(result);
+    }
+
+    private long? GetCurrentEmployeeId()
+    {
+        var employeeIdClaim = User.FindFirst(JwtRegisteredClaimNames.Sub)
+            ?? User.FindFirst(ClaimTypes.NameIdentifier);
+
+        return employeeIdClaim is not null && long.TryParse(employeeIdClaim.Value, out var employeeId)
+            ? employeeId
+            : null;
     }
 }

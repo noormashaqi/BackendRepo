@@ -1,14 +1,16 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using SupermarketSystem.Api.Common;
 using SupermarketSystem.Api.Constants;
 using SupermarketSystem.Api.Features.Employees;
 using SupermarketSystem.Api.Services.Permissions;
 using Microsoft.AspNetCore.Authorization;
+
 namespace SupermarketSystem.Api.Controllers;
 
 [ApiController]
 [Route("api/employees")]
-[AllowAnonymous]
+[Authorize]
 public class EmployeesController : ControllerBase
 {
     private readonly IMediator _mediator;
