@@ -1,4 +1,4 @@
-CREATE TABLE EmployeePermissions
+CREATE TABLE IF NOT EXISTS EmployeePermissions
 (
     Id BIGINT AUTO_INCREMENT PRIMARY KEY,
     EmployeeId BIGINT NOT NULL,
