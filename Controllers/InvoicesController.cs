@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SupermarketSystem.Api.Features.Invoices.Create;
 using SupermarketSystem.Api.Features.Invoices.Read;
 using SupermarketSystem.Api.Features.Returns.PureReturn;
+using SupermarketSystem.Api.Features.Returns.Exchange;
 namespace SupermarketSystem.Api.Controllers;
 
 [ApiController]
@@ -53,4 +54,18 @@ public async Task<IActionResult> PureReturn(
     var result = await _mediator.Send(command, cancellationToken);
     return Ok(result);
 }
+[HttpPost("{id:long}/exchange")]
+public async Task<IActionResult> Exchange(
+    long id,
+    [FromBody] ExchangeRequestBody body,
+    CancellationToken cancellationToken)
+{
+    var command = new ExchangeCommand(
+        id, body.OldProductId, body.QuantityReturned,
+        body.NewProductId, body.NewQuantity, body.EmployeeId, body.Reason);
+
+    var result = await _mediator.Send(command, cancellationToken);
+    return Ok(result);
+}
+
 }
