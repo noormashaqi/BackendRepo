@@ -21,6 +21,24 @@ public static class PermissionKeys
     public const string SalesCreate = "sales.create";
     public const string SalesView = "sales.view";
 
+    // Categories
+    public const string CategoriesView = "categories.view";
+    public const string CategoriesCreate = "categories.create";
+
+    // Products
+    public const string ProductsView = "products.view";
+    public const string ProductsCreate = "products.create";
+    public const string ProductsUpdate = "products.update";
+    public const string ProductsDeactivate = "products.deactivate";
+    public const string ProductsStockAdd = "products.stock_add";
+
+    // Invoices
+    public const string InvoicesCreate = "invoices.create";
+    public const string InvoicesView = "invoices.view";
+
+    // Reports
+    public const string ReportsView = "reports.view";
+
 
     public static readonly IReadOnlyCollection<string> All =
     [
@@ -34,7 +52,21 @@ public static class PermissionKeys
         AttendanceViewEmployee,
 
         SalesCreate,
-        SalesView
+        SalesView,
+
+        CategoriesView,
+        CategoriesCreate,
+
+        ProductsView,
+        ProductsCreate,
+        ProductsUpdate,
+        ProductsDeactivate,
+        ProductsStockAdd,
+
+        InvoicesCreate,
+        InvoicesView,
+        
+        ReportsView
     ];
 
 
