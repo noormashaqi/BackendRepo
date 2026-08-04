@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS AttendanceLog (
+    Id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    EmployeeId BIGINT NOT NULL,
+    LoginTime DATETIME NOT NULL,
+    LogoutTime DATETIME NULL,
+    CONSTRAINT FK_AttendanceLog_Employees FOREIGN KEY (EmployeeId) REFERENCES Employees(Id)
+);
