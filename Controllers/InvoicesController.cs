@@ -2,7 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using SupermarketSystem.Api.Features.Invoices.Create;
 using SupermarketSystem.Api.Features.Invoices.Read;
-
+using SupermarketSystem.Api.Features.Returns.PureReturn;
 namespace SupermarketSystem.Api.Controllers;
 
 [ApiController]
@@ -42,4 +42,15 @@ public class InvoicesController : ControllerBase
         var invoices = await _mediator.Send(new GetInvoicesQuery(date, employeeId, productId), cancellationToken);
         return Ok(invoices);
     }
+    
+[HttpPost("{id:long}/return")]
+public async Task<IActionResult> PureReturn(
+    long id,
+    [FromBody] PureReturnRequestBody body,
+    CancellationToken cancellationToken)
+{
+    var command = new PureReturnCommand(id, body.ProductId, body.QuantityReturned, body.EmployeeId, body.Reason);
+    var result = await _mediator.Send(command, cancellationToken);
+    return Ok(result);
+}
 }
