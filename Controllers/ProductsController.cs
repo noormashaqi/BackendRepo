@@ -63,6 +63,11 @@ public class ProductsController : ControllerBase
     [PermissionRequirement(PermissionKeys.ProductsCreate)]
     public async Task<IActionResult> Create([FromBody] CreateProductCommand command)
     {
+        var employeeId = GetCurrentEmployeeId();
+        if (employeeId is null)
+            return Unauthorized();
+
+        command.EmployeeId = employeeId.Value;
         var result = await _mediator.Send(command);
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }

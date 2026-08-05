@@ -1,5 +1,8 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SupermarketSystem.Api.Common;
+using SupermarketSystem.Api.Constants;
 using SupermarketSystem.Api.Dtos.Permissions;
 using SupermarketSystem.Api.Features.Permission;
 
@@ -7,6 +10,7 @@ namespace SupermarketSystem.Api.Controllers;
 
 [ApiController]
 [Route("api/employees")]
+[Authorize]
 public class EmployeePermissionsController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -18,6 +22,7 @@ public class EmployeePermissionsController : ControllerBase
 
     // GET: /api/employees/{id}/permissions
     [HttpGet("{id:long}/permissions")]
+    [PermissionRequirement(PermissionKeys.EmployeesView)]
     public async Task<IActionResult> GetPermissions(
         long id,
         CancellationToken cancellationToken)
@@ -39,6 +44,7 @@ public class EmployeePermissionsController : ControllerBase
 
     // PATCH: /api/employees/{id}/permissions
     [HttpPatch("{id:long}/permissions")]
+    [PermissionRequirement(PermissionKeys.EmployeesManagePermissions)]
     public async Task<IActionResult> UpdatePermissions(
         long id,
         [FromBody] UpdateEmployeePermissionsRequest request,
