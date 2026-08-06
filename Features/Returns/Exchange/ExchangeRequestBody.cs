@@ -5,6 +5,5 @@ public record ExchangeRequestBody(
     int QuantityReturned,
     int NewProductId,
     int NewQuantity,
-    long EmployeeId,
     string? Reason
 );

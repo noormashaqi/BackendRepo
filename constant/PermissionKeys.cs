@@ -35,10 +35,12 @@ public static class PermissionKeys
     // Invoices
     public const string InvoicesCreate = "invoices.create";
     public const string InvoicesView = "invoices.view";
-
+    // Returns
+    public const string ReturnsExchange = "returns.exchange";
     // Reports
     public const string ReportsView = "reports.view";
-
+    // Dashboard
+    public const string DashboardView = "dashboard.view";
 
     public static readonly IReadOnlyCollection<string> All =
     [
@@ -65,8 +67,9 @@ public static class PermissionKeys
 
         InvoicesCreate,
         InvoicesView,
-        
-        ReportsView
+        ReturnsExchange,
+        ReportsView,
+        DashboardView
     ];
 
 
