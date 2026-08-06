@@ -35,8 +35,12 @@ public static class PermissionKeys
     // Invoices
     public const string InvoicesCreate = "invoices.create";
     public const string InvoicesView = "invoices.view";
+    public const string InvoicesReturn = "invoices.return";
+    public const string InvoicesExchange = "invoices.exchange";
+
     // Returns
     public const string ReturnsExchange = "returns.exchange";
+
     // Reports
     public const string ReportsView = "reports.view";
     // Dashboard
@@ -67,7 +71,10 @@ public static class PermissionKeys
 
         InvoicesCreate,
         InvoicesView,
+        InvoicesReturn,
+        InvoicesExchange,
         ReturnsExchange,
+        
         ReportsView,
         DashboardView
     ];

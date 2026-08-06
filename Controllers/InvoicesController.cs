@@ -60,7 +60,7 @@ public class InvoicesController : ControllerBase
     }
 
     [HttpPost("{id:long}/return")]
-    [PermissionRequirement(PermissionKeys.ReturnsExchange)]
+    [PermissionRequirement(PermissionKeys.InvoicesReturn)]
     public async Task<IActionResult> PureReturn(
         long id,
         [FromBody] PureReturnRequestBody body,
@@ -76,7 +76,7 @@ public class InvoicesController : ControllerBase
     }
 
     [HttpPost("{id:long}/exchange")]
-    [PermissionRequirement(PermissionKeys.ReturnsExchange)]
+    [PermissionRequirement(PermissionKeys.InvoicesExchange)]
     public async Task<IActionResult> Exchange(
         long id,
         [FromBody] ExchangeRequestBody body,
