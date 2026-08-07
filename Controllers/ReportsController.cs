@@ -35,6 +35,42 @@ public class ReportsController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("employees/{id:long}")]
+    [PermissionRequirement(PermissionKeys.ReportsView)]
+    public async Task<ActionResult<EmployeeDetailReportDto>> GetEmployeeReport(
+        long id,
+        [FromQuery] DateTime? fromDate,
+        [FromQuery] DateTime? toDate,
+        CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(
+            new GetEmployeeReportQuery(id, fromDate, toDate),
+            cancellationToken);
+
+        if (result is null)
+            return NotFound(new { message = $"Employee with id {id} not found." });
+
+        return Ok(result);
+    }
+
+    [HttpGet("products/{id:int}")]
+    [PermissionRequirement(PermissionKeys.ReportsView)]
+    public async Task<ActionResult<ProductDetailReportDto>> GetProductReport(
+        int id,
+        [FromQuery] DateTime? fromDate,
+        [FromQuery] DateTime? toDate,
+        CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(
+            new GetProductReportQuery(id, fromDate, toDate),
+            cancellationToken);
+
+        if (result is null)
+            return NotFound(new { message = $"Product with id {id} not found." });
+
+        return Ok(result);
+    }
+
     [HttpGet("inventory")]
     [PermissionRequirement(PermissionKeys.ReportsView)]
     public async Task<ActionResult<InventoryReportDto>> GetInventoryReport(

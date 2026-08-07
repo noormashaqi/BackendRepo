@@ -16,6 +16,10 @@ public class SalesReportDto
 
     public decimal TotalSalesAfterDiscount { get; set; }
 
+    public decimal TotalReturnedAmount { get; set; }
+
+    public decimal NetSales { get; set; }
+
     public IReadOnlyCollection<SalesReportInvoiceDto> Invoices { get; set; } = Array.Empty<SalesReportInvoiceDto>();
 }
 
@@ -36,6 +40,10 @@ public class SalesReportInvoiceDto
     public decimal DiscountPercentage { get; set; }
 
     public decimal TotalAfterDiscount { get; set; }
+
+    public decimal ReturnedAmount { get; set; }
+
+    public decimal NetTotal { get; set; }
 
     public bool HasReturn { get; set; }
 }

@@ -5,28 +5,40 @@ using SupermarketSystem.Api.Interface;
 
 namespace SupermarketSystem.Api.Features.Reports;
 
-public record GetSalesReportQuery(
-    DateTime? FromDate,
-    DateTime? ToDate,
-    int? EmployeeId
-) : IRequest<SalesReportDto>;
+public record GetEmployeeReportQuery(
+    long EmployeeId,
+    DateTime? FromDate = null,
+    DateTime? ToDate = null
+) : IRequest<EmployeeDetailReportDto?>;
 
-public class GetSalesReportHandler : IRequestHandler<GetSalesReportQuery, SalesReportDto>
+public class GetEmployeeReportHandler : IRequestHandler<GetEmployeeReportQuery, EmployeeDetailReportDto?>
 {
     private readonly IDbConnectionFactory _connectionFactory;
 
-    public GetSalesReportHandler(IDbConnectionFactory connectionFactory)
+    public GetEmployeeReportHandler(IDbConnectionFactory connectionFactory)
     {
         _connectionFactory = connectionFactory;
     }
 
-    public async Task<SalesReportDto> Handle(
-        GetSalesReportQuery request,
+    public async Task<EmployeeDetailReportDto?> Handle(
+        GetEmployeeReportQuery request,
         CancellationToken cancellationToken)
     {
         using var connection = _connectionFactory.CreateConnection();
 
-        const string sql = """
+        const string empSql = """
+            SELECT Id AS EmployeeId, FullName, Username, Role, IsActive
+            FROM Employees
+            WHERE Id = @EmployeeId;
+            """;
+
+        var emp = await connection.QuerySingleOrDefaultAsync<EmployeeDetailReportDto>(
+            new CommandDefinition(empSql, new { request.EmployeeId }, cancellationToken: cancellationToken));
+
+        if (emp is null)
+            return null;
+
+        const string invoicesSql = """
             SELECT
                 i.Id AS InvoiceId,
                 i.InvoiceNumber,
@@ -46,9 +58,9 @@ public class GetSalesReportHandler : IRequestHandler<GetSalesReportQuery, SalesR
                 ON r.OriginalInvoiceId = i.Id
             LEFT JOIN InvoiceItems ii
                 ON ii.InvoiceId = i.Id AND ii.ProductId = r.ProductId
-            WHERE (@FromDate IS NULL OR i.Date >= @FromDate)
+            WHERE i.EmployeeId = @EmployeeId
+              AND (@FromDate IS NULL OR i.Date >= @FromDate)
               AND (@ToDateExclusive IS NULL OR i.Date < @ToDateExclusive)
-              AND (@EmployeeId IS NULL OR i.EmployeeId = @EmployeeId)
             GROUP BY i.Id, i.InvoiceNumber, i.EmployeeId, e.FullName, i.Date, i.TotalBeforeDiscount, i.DiscountPercentage, i.TotalAfterDiscount, i.HasReturn
             ORDER BY i.Date DESC, i.Id DESC;
             """;
@@ -56,32 +68,25 @@ public class GetSalesReportHandler : IRequestHandler<GetSalesReportQuery, SalesR
         var fromDate = request.FromDate?.Date;
         var toDateExclusive = request.ToDate?.Date.AddDays(1);
 
-        var rows = (await connection.QueryAsync<SalesReportInvoiceDto>(
+        var invoices = (await connection.QueryAsync<SalesReportInvoiceDto>(
             new CommandDefinition(
-                sql,
+                invoicesSql,
                 new
                 {
+                    request.EmployeeId,
                     FromDate = fromDate,
-                    ToDateExclusive = toDateExclusive,
-                    request.EmployeeId
+                    ToDateExclusive = toDateExclusive
                 },
                 cancellationToken: cancellationToken))).ToList();
 
-        var totalReturned = rows.Sum(x => x.ReturnedAmount);
-        var totalAfterDiscount = rows.Sum(x => x.TotalAfterDiscount);
+        emp.FromDate = request.FromDate?.Date;
+        emp.ToDate = request.ToDate?.Date;
+        emp.InvoiceCount = invoices.Count;
+        emp.GrossSales = invoices.Sum(x => x.TotalAfterDiscount);
+        emp.TotalReturnedAmount = invoices.Sum(x => x.ReturnedAmount);
+        emp.NetSales = emp.GrossSales - emp.TotalReturnedAmount;
+        emp.Invoices = invoices;
 
-        return new SalesReportDto
-        {
-            FromDate = request.FromDate?.Date,
-            ToDate = request.ToDate?.Date,
-            EmployeeId = request.EmployeeId,
-            InvoiceCount = rows.Count,
-            TotalSalesBeforeDiscount = rows.Sum(x => x.TotalBeforeDiscount),
-            TotalDiscountAmount = rows.Sum(x => x.TotalBeforeDiscount - x.TotalAfterDiscount),
-            TotalSalesAfterDiscount = totalAfterDiscount,
-            TotalReturnedAmount = totalReturned,
-            NetSales = totalAfterDiscount - totalReturned,
-            Invoices = rows
-        };
+        return emp;
     }
 }
