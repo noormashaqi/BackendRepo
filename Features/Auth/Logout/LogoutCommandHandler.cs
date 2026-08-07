@@ -1,5 +1,6 @@
 using Dapper;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using SupermarketSystem.Api.Interface;
 using SupermarketSystem.Api.Services.Jwt;
 
@@ -9,13 +10,16 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand, LogoutResult>
 {
     private readonly IDbConnectionFactory _dbConnectionFactory;
     private readonly IJwtService _jwtService;
+    private readonly ILogger<LogoutCommandHandler> _logger;
 
     public LogoutCommandHandler(
         IDbConnectionFactory dbConnectionFactory,
-        IJwtService jwtService)
+        IJwtService jwtService,
+        ILogger<LogoutCommandHandler> logger)
     {
         _dbConnectionFactory = dbConnectionFactory;
         _jwtService = jwtService;
+        _logger = logger;
     }
 
     public async Task<LogoutResult> Handle(LogoutCommand request, CancellationToken cancellationToken)
@@ -32,7 +36,7 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand, LogoutResult>
         connection.Open();
         using var transaction = connection.BeginTransaction();
 
-        // 1️⃣ إغلاق آخر سطر حضور مفتوح للموظف
+        // 1️⃣ إغلاق آخر سطر حضور مفتوح للموظف (إن وجد)
         const string closeAttendanceSql = @"
             UPDATE AttendanceLogs
             SET LogoutTime = @LogoutTime
@@ -41,7 +45,7 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand, LogoutResult>
             ORDER BY LoginTime DESC
             LIMIT 1;";
 
-        await connection.ExecuteAsync(
+        var attendanceRowsAffected = await connection.ExecuteAsync(
             closeAttendanceSql,
             new
             {
@@ -49,6 +53,13 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand, LogoutResult>
                 LogoutTime = DateTime.UtcNow
             },
             transaction);
+
+        if (attendanceRowsAffected == 0)
+        {
+            _logger.LogInformation(
+                "No active attendance record found for EmployeeId {EmployeeId} during logout. Proceeding with token revocation.",
+                request.EmployeeId);
+        }
 
         // 2️⃣ إلغاء صلاحية الـ Refresh Token (Revoke)
         const string revokeTokenSql = @"
