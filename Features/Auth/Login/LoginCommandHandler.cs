@@ -55,7 +55,22 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResult>
         connection.Open();
         using var transaction = connection.BeginTransaction();
 
-        // 2️⃣ تسجيل بداية الشفت (AttendanceLogs)
+        // 2️⃣ إغلاق أي شفت قديم غير مغلق وتسجيل بداية الشفت الجديد (AttendanceLogs)
+        const string closePreviousAttendanceSql = @"
+            UPDATE AttendanceLogs
+            SET LogoutTime = @Now
+            WHERE EmployeeId = @EmployeeId
+              AND LogoutTime IS NULL;";
+
+        await connection.ExecuteAsync(
+            closePreviousAttendanceSql,
+            new
+            {
+                EmployeeId = employee.Id,
+                Now = DateTime.UtcNow
+            },
+            transaction);
+
         const string insertAttendanceSql = @"
             INSERT INTO AttendanceLogs (EmployeeId, LoginTime)
             VALUES (@EmployeeId, @LoginTime);";
