@@ -47,6 +47,25 @@ public class InvoicesController : ControllerBase
         return invoice is null ? NotFound() : Ok(invoice);
     }
 
+    [HttpGet("{id:long}/printable")]
+    [PermissionRequirement(PermissionKeys.InvoicesView)]
+    public async Task<IActionResult> GetPrintableInvoice(long id, CancellationToken cancellationToken)
+    {
+        var printable = await _mediator.Send(new GetPrintableInvoiceQuery(id), cancellationToken);
+        return printable is null ? NotFound(new { message = $"Invoice with id {id} not found." }) : Ok(printable);
+    }
+
+    [HttpGet("{id:long}/print")]
+    [PermissionRequirement(PermissionKeys.InvoicesView)]
+    public async Task<IActionResult> PrintInvoiceHtml(long id, CancellationToken cancellationToken)
+    {
+        var printable = await _mediator.Send(new GetPrintableInvoiceQuery(id), cancellationToken);
+        if (printable is null)
+            return NotFound("<h3>Invoice not found.</h3>");
+
+        return Content(printable.HtmlReceipt, "text/html; charset=utf-8");
+    }
+
     [HttpGet]
     [PermissionRequirement(PermissionKeys.InvoicesView)]
     public async Task<IActionResult> GetInvoices(
