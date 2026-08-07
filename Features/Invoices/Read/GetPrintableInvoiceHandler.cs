@@ -43,10 +43,10 @@ public class GetPrintableInvoiceHandler : IRequestHandler<GetPrintableInvoiceQue
 
         var htmlBuilder = new StringBuilder();
         htmlBuilder.AppendLine("<!DOCTYPE html>");
-        htmlBuilder.AppendLine("<html dir='rtl' lang='ar'>");
+        htmlBuilder.AppendLine("<html dir='ltr' lang='en'>");
         htmlBuilder.AppendLine("<head>");
         htmlBuilder.AppendLine("    <meta charset='UTF-8'>");
-        htmlBuilder.AppendLine($"    <title>فاتورة رقم #{invoiceHeader.InvoiceNumber}</title>");
+        htmlBuilder.AppendLine($"    <title>Invoice #{invoiceHeader.InvoiceNumber}</title>");
         htmlBuilder.AppendLine("    <style>");
         htmlBuilder.AppendLine("        body { font-family: 'Courier New', Courier, monospace, sans-serif; width: 80mm; margin: 0 auto; padding: 10px; color: #000; background: #fff; font-size: 13px; }");
         htmlBuilder.AppendLine("        .text-center { text-align: center; }");
@@ -58,7 +58,7 @@ public class GetPrintableInvoiceHandler : IRequestHandler<GetPrintableInvoiceQue
         htmlBuilder.AppendLine("        .info-table { width: 100%; margin-bottom: 8px; font-size: 12px; }");
         htmlBuilder.AppendLine("        .info-table td { padding: 2px 0; }");
         htmlBuilder.AppendLine("        .items-table { width: 100%; border-collapse: collapse; margin: 8px 0; }");
-        htmlBuilder.AppendLine("        .items-table th { border-bottom: 1px solid #000; border-top: 1px solid #000; text-align: right; padding: 4px 2px; font-size: 12px; }");
+        htmlBuilder.AppendLine("        .items-table th { border-bottom: 1px solid #000; border-top: 1px solid #000; text-align: left; padding: 4px 2px; font-size: 12px; }");
         htmlBuilder.AppendLine("        .items-table td { padding: 4px 2px; border-bottom: 1px dotted #ccc; vertical-align: top; }");
         htmlBuilder.AppendLine("        .totals-table { width: 100%; margin-top: 8px; border-top: 2px dashed #000; padding-top: 6px; }");
         htmlBuilder.AppendLine("        .totals-table td { padding: 3px 0; }");
@@ -70,28 +70,28 @@ public class GetPrintableInvoiceHandler : IRequestHandler<GetPrintableInvoiceQue
         htmlBuilder.AppendLine("<body>");
 
         htmlBuilder.AppendLine("    <div class='no-print' style='text-align: center; margin-bottom: 12px;'>");
-        htmlBuilder.AppendLine("        <button onclick='window.print()' style='padding: 8px 16px; font-size: 14px; cursor: pointer; background: #007bff; color: #fff; border: none; border-radius: 4px;'>🖨️ طباعة الفاتورة (Print)</button>");
+        htmlBuilder.AppendLine("        <button onclick='window.print()' style='padding: 8px 16px; font-size: 14px; cursor: pointer; background: #007bff; color: #fff; border: none; border-radius: 4px;'>🖨️ Print Receipt</button>");
         htmlBuilder.AppendLine("    </div>");
 
         htmlBuilder.AppendLine("    <div class='header text-center'>");
-        htmlBuilder.AppendLine("        <h2>السوبرماركت - Supermarket</h2>");
-        htmlBuilder.AppendLine("        <div>فاتورة مبيعات (Sales Receipt)</div>");
-        htmlBuilder.AppendLine($"        <div class='inv-number'>رقم الفاتورة: {invoiceHeader.InvoiceNumber}</div>");
+        htmlBuilder.AppendLine("        <h2>SUPERMARKET</h2>");
+        htmlBuilder.AppendLine("        <div>Sales Receipt</div>");
+        htmlBuilder.AppendLine($"        <div class='inv-number'>Invoice #{invoiceHeader.InvoiceNumber}</div>");
         htmlBuilder.AppendLine("    </div>");
 
         htmlBuilder.AppendLine("    <table class='info-table'>");
-        htmlBuilder.AppendLine($"        <tr><td><strong>التاريخ والوقت:</strong></td><td class='text-left'>{invoiceHeader.Date:yyyy-MM-dd HH:mm:ss}</td></tr>");
-        htmlBuilder.AppendLine($"        <tr><td><strong>الموظف (الكاشير):</strong></td><td class='text-left'>{invoiceHeader.EmployeeName}</td></tr>");
-        htmlBuilder.AppendLine("        <tr><td><strong>طريقة الدفع:</strong></td><td class='text-left'>كاش (Cash)</td></tr>");
+        htmlBuilder.AppendLine($"        <tr><td><strong>Date & Time:</strong></td><td class='text-right'>{invoiceHeader.Date:yyyy-MM-dd HH:mm:ss}</td></tr>");
+        htmlBuilder.AppendLine($"        <tr><td><strong>Cashier:</strong></td><td class='text-right'>{invoiceHeader.EmployeeName}</td></tr>");
+        htmlBuilder.AppendLine("        <tr><td><strong>Payment Method:</strong></td><td class='text-right'>Cash</td></tr>");
         htmlBuilder.AppendLine("    </table>");
 
         htmlBuilder.AppendLine("    <table class='items-table'>");
         htmlBuilder.AppendLine("        <thead>");
         htmlBuilder.AppendLine("            <tr>");
-        htmlBuilder.AppendLine("                <th style='width: 45%;'>الصنف</th>");
-        htmlBuilder.AppendLine("                <th class='text-center' style='width: 15%;'>الكمية</th>");
-        htmlBuilder.AppendLine("                <th class='text-left' style='width: 20%;'>السعر</th>");
-        htmlBuilder.AppendLine("                <th class='text-left' style='width: 20%;'>الإجمالي</th>");
+        htmlBuilder.AppendLine("                <th style='width: 45%;'>Item</th>");
+        htmlBuilder.AppendLine("                <th class='text-center' style='width: 15%;'>Qty</th>");
+        htmlBuilder.AppendLine("                <th class='text-right' style='width: 20%;'>Price</th>");
+        htmlBuilder.AppendLine("                <th class='text-right' style='width: 20%;'>Total</th>");
         htmlBuilder.AppendLine("            </tr>");
         htmlBuilder.AppendLine("        </thead>");
         htmlBuilder.AppendLine("        <tbody>");
@@ -101,8 +101,8 @@ public class GetPrintableInvoiceHandler : IRequestHandler<GetPrintableInvoiceQue
             htmlBuilder.AppendLine("            <tr>");
             htmlBuilder.AppendLine($"                <td>{item.ProductName}</td>");
             htmlBuilder.AppendLine($"                <td class='text-center'>{item.Quantity}</td>");
-            htmlBuilder.AppendLine($"                <td class='text-left'>{item.UnitPrice:N2}</td>");
-            htmlBuilder.AppendLine($"                <td class='text-left'>{item.LineTotal:N2}</td>");
+            htmlBuilder.AppendLine($"                <td class='text-right'>{item.UnitPrice:N2}</td>");
+            htmlBuilder.AppendLine($"                <td class='text-right'>{item.LineTotal:N2}</td>");
             htmlBuilder.AppendLine("            </tr>");
         }
 
@@ -110,20 +110,20 @@ public class GetPrintableInvoiceHandler : IRequestHandler<GetPrintableInvoiceQue
         htmlBuilder.AppendLine("    </table>");
 
         htmlBuilder.AppendLine("    <table class='totals-table'>");
-        htmlBuilder.AppendLine($"        <tr><td>المجموع قبل الخصم:</td><td class='text-left'>{invoiceHeader.TotalBeforeDiscount:N2}</td></tr>");
+        htmlBuilder.AppendLine($"        <tr><td>Subtotal:</td><td class='text-right'>{invoiceHeader.TotalBeforeDiscount:N2}</td></tr>");
 
         if (invoiceHeader.DiscountPercentage > 0)
         {
-            htmlBuilder.AppendLine($"        <tr><td>نسبة الخصم:</td><td class='text-left'>%{invoiceHeader.DiscountPercentage:N2}</td></tr>");
-            htmlBuilder.AppendLine($"        <tr><td>مبلغ الخصم:</td><td class='text-left'>-{discountAmount:N2}</td></tr>");
+            htmlBuilder.AppendLine($"        <tr><td>Discount (%):</td><td class='text-right'>{invoiceHeader.DiscountPercentage:N2}%</td></tr>");
+            htmlBuilder.AppendLine($"        <tr><td>Discount Amount:</td><td class='text-right'>-{discountAmount:N2}</td></tr>");
         }
 
-        htmlBuilder.AppendLine($"        <tr class='net-total'><td>صافي المطلوب (كاش):</td><td class='text-left'>{invoiceHeader.TotalAfterDiscount:N2}</td></tr>");
+        htmlBuilder.AppendLine($"        <tr class='net-total'><td>Total Payable (Cash):</td><td class='text-right'>{invoiceHeader.TotalAfterDiscount:N2}</td></tr>");
         htmlBuilder.AppendLine("    </table>");
 
         htmlBuilder.AppendLine("    <div class='footer text-center'>");
-        htmlBuilder.AppendLine("        <p>شكراً لتسوقكم معنا!</p>");
-        htmlBuilder.AppendLine("        <p>يرجى الاحتفاظ بالفاتورة في حال الترجيع أو التبديل.</p>");
+        htmlBuilder.AppendLine("        <p>Thank you for shopping with us!</p>");
+        htmlBuilder.AppendLine("        <p>Please keep this receipt for returns or exchanges.</p>");
         htmlBuilder.AppendLine("    </div>");
 
         htmlBuilder.AppendLine("    <script>");
@@ -139,7 +139,7 @@ public class GetPrintableInvoiceHandler : IRequestHandler<GetPrintableInvoiceQue
             InvoiceNumber = invoiceHeader.InvoiceNumber,
             EmployeeName = invoiceHeader.EmployeeName,
             Date = invoiceHeader.Date,
-            PaymentMethod = "Cash (نقداً)",
+            PaymentMethod = "Cash",
             TotalBeforeDiscount = invoiceHeader.TotalBeforeDiscount,
             DiscountPercentage = invoiceHeader.DiscountPercentage,
             DiscountAmount = discountAmount,

@@ -10,7 +10,7 @@ public class PrintableInvoiceDto
     public string InvoiceNumber { get; init; } = string.Empty;
     public string EmployeeName { get; init; } = string.Empty;
     public DateTime Date { get; init; }
-    public string PaymentMethod { get; init; } = "Cash (نقداً)";
+    public string PaymentMethod { get; init; } = "Cash";
     public decimal TotalBeforeDiscount { get; init; }
     public decimal DiscountPercentage { get; init; }
     public decimal DiscountAmount { get; init; }
